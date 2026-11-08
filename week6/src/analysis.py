@@ -46,17 +46,6 @@ for d in rows:
 slope = np.polyfit(np.log([d["r"] for d in rows]), np.log([d["meas"] for d in rows]), 1)[0]
 out["wire"] = dict(I=I1, offset=OFFSET, L=LW, slope=slope, rows=rows)
 
-fig, ax = plt.subplots(figsize=(6.2, 3.6), dpi=200)
-rr = np.linspace(0.008, 0.055, 300)
-ax.plot(rr * 100, MU0 * I1 / (2 * np.pi * rr) * 1e4, color=C_THEO, lw=1.6,
-        label=r"이론값  $B=\mu_0 I/2\pi r$")
-ax.plot([d["r"] * 100 for d in rows], [d["meas"] * 1e4 for d in rows], "s-",
-        color=C_MEAS, ms=5, lw=1.2, label="측정값")
-ax.set_xlabel("도선으로부터의 거리 r (cm)")
-ax.set_ylabel("자기장 B (gauss)")
-ax.set_title("직선도선 주위의 거리에 따른 자기장 (I = 5 A)", fontsize=11)
-ax.grid(alpha=.3); ax.legend(frameon=False); ax.set_ylim(0, 1.4)
-fig.tight_layout(); fig.savefig(FIG / "fig1_wire.png"); plt.close(fig)
 
 # ---------------- 실험 2: 원형도선 ----------------
 I2 = 3.0
@@ -70,19 +59,6 @@ for R, (m0, mR) in meas2.items():
                                  ratio_meas=mR / m0, ratio_theo=tR / t0)
 out["loop"] = dict(I=I2, loops=loops)
 
-fig, ax = plt.subplots(figsize=(6.2, 3.6), dpi=200)
-xx = np.linspace(0, 0.08, 300)
-for (R, (m0, mR)), c, mk in zip(meas2.items(), [C_THEO, "#3E8E5E"], ["o", "^"]):
-    ax.plot(xx * 100, MU0 * I2 * R**2 / (2 * (R**2 + xx**2) ** 1.5) * 1e4, color=c,
-            lw=1.6, label=f"이론값 (R = {R*100:.0f} cm)")
-    ax.plot([0, R * 100], [m0 * 1e4, mR * 1e4], mk, color=C_MEAS, ms=7,
-            mfc=C_MEAS if R == 0.04 else "white", mew=1.5,
-            label=f"측정값 (R = {R*100:.0f} cm)")
-ax.set_xlabel("원형도선 중심으로부터 중심축 위의 거리 x (cm)")
-ax.set_ylabel("자기장 B (gauss)")
-ax.set_title("원형도선 중심축 위의 자기장 (I = 3 A)", fontsize=11)
-ax.grid(alpha=.3); ax.legend(frameon=False, fontsize=8.5)
-fig.tight_layout(); fig.savefig(FIG / "fig2_loop.png"); plt.close(fig)
 
 # ---------------- 실험 3: 솔레노이드 ----------------
 I3, Rs, L, N = 0.67, 0.020, 0.110, 2900
@@ -97,21 +73,6 @@ out["sol"] = dict(I=I3, R=Rs, L=L, N=N, n=n, km=km, ke=ke, Binf=Binf,
                   em=err(abs(mm_), tm)[1], ee=err(abs(me_), te)[1],
                   ratio_meas=me_ / mm_, ratio_theo=te / tm)
 
-fig, ax = plt.subplots(figsize=(6.2, 3.6), dpi=200)
-xs = np.linspace(-0.11, 0.11, 400)
-a, b = L / 2 + xs, L / 2 - xs
-Bx = 0.5 * MU0 * n * I3 * (b / np.sqrt(b**2 + Rs**2) + a / np.sqrt(a**2 + Rs**2))
-ax.axvspan(-L / 2 * 100, L / 2 * 100, color="#999", alpha=.12, lw=0, label="코일 구간")
-ax.axhline(Binf * 1e3, color="#777", ls="--", lw=1, label=r"무한 솔레노이드 $\mu_0 nI$")
-ax.plot(xs * 100, Bx * 1e3, color=C_THEO, lw=1.6, label="이론값 (유한 솔레노이드)")
-ax.plot([0, L / 2 * 100], [abs(mm_) * 1e3, abs(me_) * 1e3], "s", color=C_MEAS, ms=7,
-        label="측정값 (크기)")
-ax.set_xlabel("코일 중심으로부터 중심축 위의 거리 x (cm)")
-ax.set_ylabel("자기장 B (mT)")
-ax.set_title("솔레노이드 중심축 위의 자기장 (I = 0.67 A)", fontsize=11)
-ax.grid(alpha=.3); ax.legend(frameon=False, fontsize=8, loc="upper center", ncol=2)
-ax.set_ylim(0, 31)
-fig.tight_layout(); fig.savefig(FIG / "fig3_solenoid.png"); plt.close(fig)
 
 # ---------------- 질문 2: 자기장선 ----------------
 def loop_flux(rho, z, a):

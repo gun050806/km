@@ -1,5 +1,5 @@
 // 6주차(실험 5) 암페어 법칙 결과 레포트 생성 스크립트
-// 실행: python3 src/analysis.py && node src/build_report.js
+// 실행: python3 src/analysis.py && node src/build_report.js && python3 src/add_charts.py
 const fs = require("fs");
 const path = require("path");
 const {
@@ -79,6 +79,14 @@ function table(widths, rows) {
   });
 }
 const sci = (x, d = 3) => sciRuns(x, d, { size: 19 });
+
+// Word 차트 자리표시자 (src/add_charts.py 가 실제 차트로 교체)
+function chartFig(n, caption) {
+  return [
+    P([t(`[[CHART:${n}]]`)], { alignment: AlignmentType.CENTER, keepNext: true }),
+    P([t(caption, { size: 19, bold: true })], { alignment: AlignmentType.CENTER, spacing: { after: 240 } }),
+  ];
+}
 
 function figure(file, caption, wPx, hPx, widthIn = 5.6) {
   const w = Math.round(widthIn * 96), h = Math.round((w * hPx) / wPx);
@@ -183,7 +191,7 @@ const children = [
   sub1(`[실험 1] 직선도선 주위의 자기장 측정 (전류 I = ${W.I} A)`),
   note(`(센서의 흰 점이 도선 중심에서 ${W.offset * 1000} mm 떨어진 곳에서부터 측정을 시작했기 때문에 도선으로부터의 거리 r은 측정 거리에 ${W.offset * 1000} mm를 더해 구하였다. 1 G = 10⁻⁴ T)`),
   wireTable,
-  ...figure("fig1_wire.png", "[그림 1] 직선도선으로부터의 거리에 따른 자기장 (측정값과 이론값)", 1240, 720),
+  ...chartFig(1, "[그림 1] 직선도선으로부터의 거리에 따른 자기장 (측정값과 이론값)"),
 
   sub1(`[실험 2] 원형도선 주위의 자기장 측정 (전류 I = ${R.loop.I} A)`),
   P([t("(1) R = 4 cm", { bold: true })], { indent: { left: 440 }, keepNext: true }),
@@ -194,7 +202,7 @@ const children = [
   blank(),
   P([t("(3) 중심 대비 반지름 거리에서의 자기장 비율", { bold: true })], { indent: { left: 440 }, keepNext: true }),
   ratioTable,
-  ...figure("fig2_loop.png", "[그림 2] 원형도선 중심축 위의 자기장 (이론 곡선과 측정 지점)", 1240, 720),
+  ...chartFig(2, "[그림 2] 원형도선 중심축 위의 자기장 (이론 곡선과 측정 지점)"),
 
   sub1(`[실험 3] 솔레노이드 중심축에서의 자기장 측정 (전류 I ≈ ${S.I} A)`),
   note("(측정값 일부가 누락되어 코일 상수와 k는 일부 역산하여 구하였다.)"),
@@ -207,7 +215,7 @@ const children = [
   P([t("(3) 측정값과 이론값 비교", { bold: true })], { indent: { left: 440 }, keepNext: true }),
   solTable,
   note("(측정값의 − 부호는 자기장의 방향이 센서의 기준 방향과 반대라는 의미이기 때문에 이론값과는 크기만 비교하였다.)"),
-  ...figure("fig3_solenoid.png", "[그림 3] 솔레노이드 중심축 위의 자기장 (이론 곡선과 측정 지점)", 1240, 720),
+  ...chartFig(3, "[그림 3] 솔레노이드 중심축 위의 자기장 (이론 곡선과 측정 지점)"),
 
   // 3. 결과 분석
   section("3. 결과 분석"),
