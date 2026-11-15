@@ -1,5 +1,5 @@
 // 7주차(실험 6) 전자기 유도와 변압기 결과 레포트 생성 스크립트
-// 실행: python3 src/analysis.py && python3 src/equations.py && node src/build_report.js && python3 src/add_charts.py
+// 실행: python3 src/analysis.py && node src/build_report.js && python3 src/add_charts.py
 const fs = require("fs");
 const path = require("path");
 const {
@@ -102,17 +102,6 @@ function figure(file, caption, widthIn) {
   ];
 }
 
-// 수식 그림 (src/equations.py 가 만든 PNG). 어느 뷰어에서나 보이도록 Word 수식 대신 사용
-function eqImg(file, label) {
-  const buf = fs.readFileSync(path.join(ROOT, "fig", file));
-  const wPx = buf.readUInt32BE(16), hPx = buf.readUInt32BE(20);
-  const w = Math.round((wPx / 300) * 0.8 * 96), h = Math.round((w * hPx) / wPx);
-  const runs = [new ImageRun({ type: "png", data: buf, transformation: { width: w, height: h },
-    altText: { title: label, description: label, name: file } })];
-  if (label) runs.push(t(`        ${label}`, { size: 19, color: "555555" }));
-  return new Paragraph({ children: runs, alignment: AlignmentType.CENTER, spacing: { before: 80, after: 160 } });
-}
-
 // ---------- 데이터 ----------
 const pct = (x) => fx(x, 2);
 const CORE = R.core, T = R.turns, F = R.turns_fit;
@@ -210,9 +199,9 @@ const children = [
 
   section("3. 결과 분석"),
   body("코일을 통과하는 자기선속이 시간에 따라 변하면 코일에 유도 기전력이 생기는데 이를 패러데이 법칙이라고 한다. 유도 기전력은 자기선속의 변화를 방해하는 방향으로 생기며(렌츠의 법칙), N번 감은 코일에서는 다음과 같이 나타낼 수 있다."),
-  eqImg("eq1_faraday.png", "(패러데이 법칙)"),
+  eq([mr("ε"), mr("="), mr("−"), mr("N"), frac([mr("d"), subm([mr("Φ")], [mr("B")])], [mr("dt")]), mr(",    "), subm([mr("Φ")], [mr("B")]), mr("="), mr("∫"), mr("B"), mr("·"), mr("d"), mr("A")], "(패러데이 법칙)"),
   body("변압기는 첫 번째 코일에 교류 전류를 흘려 시간에 따라 변하는 자기선속을 만들고, 이 자기선속이 철심을 따라 두 번째 코일을 통과하면서 유도 기전력이 생기는 원리를 이용한다. 두 코일을 같은 자기선속이 지나간다면 한 번 감을 때마다 생기는 기전력이 같기 때문에 전압의 비는 감은 수의 비와 같다. 그리고 이상적인 변압기에서는 전력 손실이 없기 때문에 입력 전력과 출력 전력이 같고, 전류의 비는 감은 수의 비와 반대가 된다."),
-  eqImg("eq2_transformer.png", "(이상적인 변압기)"),
+  eq([frac([Vs("2")], [Vs("1")]), mr("="), frac([Ns("2")], [Ns("1")]), mr(",    "), Vs("1"), Is("1"), mr("="), Vs("2"), Is("2"), mr("   ⇒   "), frac([Is("2")], [Is("1")]), mr("="), frac([Ns("1")], [Ns("2")])], "(이상적인 변압기)"),
   body(`[실험 1]에서는 400회 감은 두 코일 사이의 철심 구조를 바꿔가며 두 번째 코일의 출력 전압을 측정하였다. 철심이 없을 때 출력 전압은 ${fx(CORE[0].vout, 3)} V로 입력 전압의 약 ${fx(CORE[0].ratio * 100, 0)}%밖에 되지 않았지만, 두 코일 사이에 가로대를 놓으면 ${fx(CORE[1].vout, 3)} V, U자형 철심에 두 코일을 끼우면 ${fx(CORE[2].vout, 3)} V, 여기에 가로대를 추가로 놓으면 ${fx(CORE[3].vout, 3)} V로 입력 전압의 약 ${fx(CORE[3].ratio * 100, 0)}%까지 커졌다. 철은 공기보다 투자율이 매우 크기 때문에 첫 번째 코일이 만든 자기선속이 철심을 따라 모여 두 번째 코일을 통과하게 된다. 그러므로 철심이 두 코일을 끊김 없이 연결해 자기선속이 지나가는 닫힌 경로를 만들수록 출력 전압이 커짐을 알 수 있다. 다음으로 U자형 철심에 가로대를 놓은 상태에서 두 번째 코일의 감은 수를 200, 400, 800회로 바꿔가며 출력 전압을 측정하였다. 출력 전압은 ${fx(Tc(200).vout, 3)} V, ${fx(Tc(400).vout, 3)} V, ${fx(Tc(800).vout, 3)} V로 감은 수가 두 배가 될 때마다 거의 두 배씩 커졌고, 추세선이 y = ${fx(F.slope, 4)}x + ${fx(F.intercept, 2)}인 일차함수인 것을 보면 출력 전압과 두 번째 코일의 감은 수가 비례관계임을 확인할 수 있다. 다만 실제 전압비는 세 경우 모두 이상적인 전압비 N₂/N₁보다 약 10% 작게 나왔다. 마지막으로 [실험 2]에서는 두 번째 코일에 100 Ω의 부하 저항을 연결하고 입력과 출력의 전압, 전류를 측정하였다. 전압 이득은 ${C.map((r) => fx(r.gv, 3)).join(", ")}로 N₂/N₁(0.5, 1, 2)에 따라 커졌고, 출력 전류와 입력 전류의 비는 ${C.map((r) => fx(r.gi, 3)).join(", ")}로 N₁/N₂(2, 1, 0.5)에 따라 작아졌다. 이를 통해 전압은 감은 수에 비례하고 전류는 감은 수에 반비례한다는 변압기의 관계가 성립함을 알 수 있다. 또한 전력 이득은 ${fx(gpMin, 3)}~${fx(gpMax, 3)}로 1보다 작게 나와 입력 전력의 약 ${fx(lossMin, 0)}~${fx(lossMax, 0)}%가 변압기에서 손실되었음을 알 수 있다.`),
 
   section("4. 질문"),
