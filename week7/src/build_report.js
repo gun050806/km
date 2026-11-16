@@ -108,48 +108,53 @@ const CORE = R.core, T = R.turns, F = R.turns_fit;
 const C = [...R.circ].sort((a, b) => a.n2 - b.n2);
 const Ts = [...T].sort((a, b) => a.n2 - b.n2);
 const H = (s, w) => cell(s, w, { head: true });
-const NN = (sym, s) => [t(sym, { size: 19, bold: true }), t(s, { size: 19, bold: true, subScript: true })];
-const NNh = (pre, sym, s, post, w) => cell([t(pre, { size: 19, bold: true }), ...NN(sym, s), t(post, { size: 19, bold: true })], w, { head: true });
 
-// 표 1.1
-const w11 = [5000, 2013, 2013];
+// ---- 표: 조에서 정리한 표(사진)와 같은 모양 (음영·굵게 없음, 왼쪽 정렬) ----
+function pcell(text, w, o = {}) {
+  return new TableCell({
+    borders, width: { size: w, type: WidthType.DXA }, rowSpan: o.rowSpan,
+    margins: { top: 60, bottom: 60, left: 80, right: 80 }, verticalAlign: VerticalAlign.CENTER,
+    children: [new Paragraph({ children: [t(text, { size: o.size || 20 })], keepNext: o.keep !== false })],
+  });
+}
+const tableLabel = (s) => P([t(s, { size: 19 })], { indent: { left: 440 }, spacing: { before: 120, after: 60 }, keepNext: true });
+
+// 표1.1
+const w11 = [5800, 3226];
 const coreTable = table(w11, [
-  new TableRow({ children: [H("코일 구조", w11[0]), H("출력 전압 (V)", w11[1]), H("출력 전압 / 입력 전압", w11[2])] }),
-  ...CORE.map((c, i, a) => new TableRow({ children: [cell(c.name, w11[0], K(i, a)), cell(fx(c.vout, 3), w11[1], K(i, a)), cell(fx(c.ratio, 3), w11[2], K(i, a))] })),
+  new TableRow({ children: [pcell("코일 구조", w11[0]), pcell("출력 전압(V)", w11[1])] }),
+  ...CORE.map((c, i, a) => new TableRow({ children: [pcell(c.name.replace("U자형", "U자형"), w11[0], K(i, a)), pcell(fx(c.vout, 3), w11[1], K(i, a))] })),
 ]);
 
-// 표 1.2
-const w12 = [1000, 1000, 1100, 1100, 1300, 1200, 1200, 1126];
+// 표1.2
+const w12 = [1504, 1504, 1504, 1504, 1504, 1506];
 const turnsTable = table(w12, [
-  new TableRow({ children: [H("첫 번째 코일", w12[0]), H("두 번째 코일", w12[1]), H("입력 전압 (V)", w12[2]),
-    H("출력 전압 (V)", w12[3]), H("이론 출력 전압 (V)", w12[4]), H("실제 전압비", w12[5]),
-    H([t("이상 전압비 (N", { size: 19, bold: true }), t("2", { size: 19, bold: true, subScript: true }), t("/N", { size: 19, bold: true }), t("1", { size: 19, bold: true, subScript: true }), t(")", { size: 19, bold: true })], w12[6]),
-    H("오차율 (%)", w12[7])] }),
-  ...T.map((r, i, a) => new TableRow({ children: [cell(String(r.n1), w12[0], K(i, a)), cell(String(r.n2), w12[1], K(i, a)), cell(fx(r.vin, 3), w12[2], K(i, a)),
-    cell(fx(r.vout, 3), w12[3], K(i, a)), cell(fx(r.vth, 3), w12[4], K(i, a)), cell(fx(r.ratio, 3), w12[5], K(i, a)), cell(fx(r.ideal, 3), w12[6], K(i, a)), cell(pct(r.err), w12[7], K(i, a))] })),
+  new TableRow({ children: ["첫 번째 코일", "두 번째 코일", "입력 전압(V)", "출력전압(V)", "실제전압비", "오차율(%)"].map((h, k) => pcell(h, w12[k])) }),
+  ...T.map((r, i, a) => new TableRow({ children: [String(r.n1), String(r.n2), fx(r.vin, 3), fx(r.vout, 3), fx(r.ratio, 3), pct(r.err)]
+    .map((v, k) => pcell(v, w12[k], K(i, a))) })),
 ]);
 
-// 표 2.1 (측정값)
-const w21 = [880, 880, 880, 1000, 1000, 1100, 1000, 1000, 1286];
+// 표2.1 (사진의 숫자 표기 그대로; 계산값과 반올림이 맞는지 확인)
+const PHOTO = {
+  200: ["3.637", "9.72", "0.0354", "1.750", "17.50", "0.0306", "0.481", "0.866", "1.800"],
+  400: ["3.610", "33.2", "0.1199", "3.190", "31.9", "0.1018", "0.884", "0.849", "0.961"],
+  800: ["3.585", "118.0", "0.4230", "6.200", "62.0", "0.3844", "1.729", "0.909", "0.525"],
+};
+for (const r of C) {
+  const calc = [r.vin, r.iin * 1000, r.pin, r.vout, r.iout * 1000, r.pout, r.gv, r.gp, r.gi];
+  PHOTO[r.n2].forEach((v, k) => {
+    const d = (v.split(".")[1] || "").length;
+    if (Math.abs(Number(v) - calc[k]) > 0.51 * 10 ** -d) throw new Error(`표2.1 값 불일치: N2=${r.n2} 열${k} ${v} vs ${calc[k]}`);
+  });
+}
+const w21 = [560, 560, 640, 760, 760, 760, 760, 760, 760, 720, 720, 1246];
+const H21 = ["1", "2", "저항(Ω)", "입력 전압(V)", "입력 전류(mA)", "입력 전력(W)", "출력 전압(V)", "출력 전류(mA)", "출력 전력(W)", "전압이득", "전력이득", "출력전류/입력전류"];
 const circTable = table(w21, [
-  new TableRow({ children: [H("첫 번째 코일", w21[0]), H("두 번째 코일", w21[1]), H("저항 (Ω)", w21[2]),
-    H("입력 전압 (V)", w21[3]), H("입력 전류 (mA)", w21[4]), H("입력 전력 (W)", w21[5]),
-    H("출력 전압 (V)", w21[6]), H("출력 전류 (mA)", w21[7]), H("출력 전력 (W)", w21[8])] }),
-  ...C.map((r, i, a) => new TableRow({ children: [cell(String(r.n1), w21[0], K(i, a)), cell(String(r.n2), w21[1], K(i, a)), cell(String(r.R), w21[2], K(i, a)),
-    cell(fx(r.vin, 3), w21[3], K(i, a)), cell(fx(r.iin * 1000, 2), w21[4], K(i, a)), cell(fx(r.pin, 4), w21[5], K(i, a)),
-    cell(fx(r.vout, 3), w21[6], K(i, a)), cell(fx(r.iout * 1000, 2), w21[7], K(i, a)), cell(fx(r.pout, 4), w21[8], K(i, a))] })),
-]);
-// 표 2.2 (계산값)
-const w22 = [1000, 1150, 1150, 1000, 1150, 1150, 1000, 1426];
-const subH = (a, b, c, d) => [t(a, { size: 19, bold: true }), t(b, { size: 19, bold: true, subScript: true }), t(c, { size: 19, bold: true }), t(d, { size: 19, bold: true, subScript: true }), t(")", { size: 19, bold: true })];
-const gainTable = table(w22, [
-  new TableRow({ children: [H("두 번째 코일", w22[0]), H("전압 이득 (측정)", w22[1]),
-    H(subH("전압 이득 (이상, N", "2", "/N", "1"), w22[2]), H("오차율 (%)", w22[3]),
-    H("출력 전류 / 입력 전류", w22[4]), H(subH("전류 비 (이상, N", "1", "/N", "2"), w22[5]),
-    H("오차율 (%)", w22[6]), H("전력 이득", w22[7])] }),
-  ...C.map((r, i, a) => new TableRow({ children: [cell(String(r.n2), w22[0], K(i, a)), cell(fx(r.gv, 3), w22[1], K(i, a)), cell(fx(r.gv_ideal, 3), w22[2], K(i, a)),
-    cell(pct(r.gv_err), w22[3], K(i, a)), cell(fx(r.gi, 3), w22[4], K(i, a)), cell(fx(r.gi_ideal, 3), w22[5], K(i, a)), cell(pct(r.gi_err), w22[6], K(i, a)),
-    cell(fx(r.gp, 3), w22[7], K(i, a))] })),
+  new TableRow({ children: H21.map((h, k) => pcell(h, w21[k], { size: 17 })) }),
+  ...C.map((r, i, a) => new TableRow({ children: [
+    ...(i === 0 ? [pcell(String(r.n1), w21[0], { rowSpan: C.length, size: 17 })] : []),
+    ...[String(r.n2), String(r.R), ...PHOTO[r.n2]].map((v, k) => pcell(v, w21[k + 1], { ...K(i, a), size: 17 })),
+  ] })),
 ]);
 
 // ---------- 본문 ----------
@@ -180,21 +185,20 @@ const children = [
   P([t("(1) 코일 구조에 따른 출력 전압", { bold: true })], { indent: { left: 440 }, keepNext: true }),
   ...figure("manual_fig12_core.png", "[그림 1] 철심 구조 (왼쪽부터 두 코일 사이에 가로대, U자형 철심, U자형 철심 + 가로대)", 6.0),
   note(`(첫 번째 코일 = 400회, 두 번째 코일 = 400회, 입력 전압 = ${fx(R.vin_core, 3)} V)`),
+  tableLabel("표1.1"),
   coreTable,
   ...chartFig(1, "[그림 2] 코일 구조에 따른 출력 전압"),
   P([t("(2) 두 번째 코일의 감은 수에 따른 출력 전압", { bold: true })], { indent: { left: 440 }, keepNext: true }),
-  note("(U자형 철심에 가로대를 추가로 놓은 상태에서 측정하였다. 이론 출력 전압 = 입력 전압 × N₂/N₁)"),
+  note("(U자형 철심에 가로대를 추가로 놓은 상태에서 측정하였다. 오차율은 실제전압비를 이상적인 전압비 N₂/N₁과 비교하여 구하였다.)"),
+  tableLabel("표1.2"),
   turnsTable,
   ...chartFig(2, "[그림 3] 두 번째 코일의 감은 수에 따른 출력 전압"),
 
   sub1("[실험 2] 회로에 따른 전압 변화 측정"),
   ...figure("manual_fig13_circuit.png", "[그림 4] 출력 쪽에 부하 저항을 연결한 변압기 회로", 4.6),
   note("(두 번째 코일에 100 Ω의 부하 저항을 연결하였다. 출력 전류 = 출력 전압 / 부하 저항, 전압 이득 = Vout/Vin, 전력 이득 = Pout/Pin = IoutVout/IinVin)"),
-  P([t("(1) 측정값", { bold: true })], { indent: { left: 440 }, keepNext: true }),
+  tableLabel("표2.1"),
   circTable,
-  blank(),
-  P([t("(2) 전압 이득, 전류 비, 전력 이득", { bold: true })], { indent: { left: 440 }, keepNext: true }),
-  gainTable,
   ...chartFig(3, "[그림 5] 두 번째 코일의 감은 수에 따른 전압 이득과 전류 비"),
 
   section("3. 결과 분석"),
@@ -214,7 +218,7 @@ const children = [
   body("변압기의 성능을 높이기 위해서는 첫 번째 코일이 만든 자기선속이 빠져나가지 않고 두 번째 코일로 전달되도록 해야 한다. 이를 위해 철심을 닫힌 고리 모양으로 만들고 가로대와 U자형 철심 사이의 틈을 최대한 줄여야 한다. 또한 코일과 철심 사이의 간격을 줄이거나 두 코일을 같은 철심 위에 겹쳐 감는 방법이 있고 철보다 투자율이 큰 물질로 철심을 만들거나 얇은 철판을 절연하여 쌓은 철심을 사용해 맴돌이 전류에 의한 손실을 줄이는 방법이 존재한다. 그리고 저항이 작은 굵은 도선으로 코일을 감으면 도선에서 열로 손실되는 에너지를 줄일 수 있다고 생각한다.", 800),
   sub1("[실험 2]"),
   q("(1) 표 2.1에 나온 값들을 계산하여라."),
-  body("입력 전력과 출력 전력은 P = IV로 구하였고 전압 이득은 Vout/Vin으로 전력 이득은 Pout/Pin으로 계산하여 [실험 2]의 (1), (2) 표에 정리하였다.", 800),
+  body("입력 전력과 출력 전력은 P = IV로 구하였고 전압 이득은 Vout/Vin으로 전력 이득은 Pout/Pin으로 계산하여 [표2.1]에 정리하였다.", 800),
   q("(2) 같은 값의 저항을 가지며 감은 수가 다른 두 코일에 대해 출력 전류와 입력 전류 사이에 어떤 관계가 존재하는가?"),
   body(`실험결과를 살펴보면 같은 100 Ω 저항에서 출력 전류와 입력 전류의 비는 두 번째 코일이 200회일 때 ${fx(Cc(200).gi, 3)}, 400회일 때 ${fx(Cc(400).gi, 3)}, 800회일 때 ${fx(Cc(800).gi, 3)}였다. 이는 각각 N₁/N₂ 값인 2, 1, 0.5와 가까우므로 출력 전류와 입력 전류의 비는 감은 수의 비에 반비례한다(Iout/Iin = N₁/N₂). 이상적인 변압기에서는 VinIin = VoutIout이고 Vout/Vin = N₂/N₁이기 때문에 이러한 관계가 나온다. 또한 두 번째 코일의 감은 수가 커질수록 입력 전류가 ${C.map((r) => fx(r.iin * 1000, 2) + " mA").join(", ")}로 크게 증가하였는데 입력 쪽에서 보면 부하 저항이 R(N₁/N₂)², 즉 ${C.map((r) => fx(r.r_ref, 0) + " Ω").join(", ")}인 것처럼 작아지기 때문이다.`, 800),
   q("(3) 이상적인 전압 이득은 두 번째 감은 횟수를 첫 번째 감은 횟수로 나눈 값과 같다. 실제 전압 이득(Vout/Vin)을 어떻게 이상적인 전압 이득과 비교할 수 있는가?"),
